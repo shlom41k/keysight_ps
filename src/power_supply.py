@@ -47,6 +47,9 @@ class PowerSupply:
     def get_message(self) -> str:
         return self.port.read_all().decode(encoding=self.__class__.coding).rstrip("\n")
 
+    def get_raw_message(self) -> str:
+        return self.port.read_all().decode(encoding=self.__class__.coding)
+
     def get_info(self) -> str:
         """
         Get info about power supply device
@@ -112,7 +115,7 @@ if __name__ == "__main__":
     print(PowerSupply.get_com_ports())
 
     agilent = PowerSupply(
-        port="COM19",
+        port="COM3",
         baudrate=9600,
         bytesize=8,
         stop_bits=2,
@@ -138,7 +141,11 @@ if __name__ == "__main__":
     sleep(1)
     agilent.send_message("VOLTage:RANGe HIGH")
     sleep(0.1)
-    # agilent.send_message("DISPlay:TEXT[:DATA] fff")
+    # agilent.send_message("DISPlay?")
+    agilent.send_message("DISPlay:TEXT:CLEar")
+    agilent.send_message("DISPlay:TEXT?")
+    # agilent.send_message(f'DISP:TEXT "Hello world"')
+    print(agilent.get_raw_message())
 
 
 
