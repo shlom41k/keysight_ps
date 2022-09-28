@@ -8,7 +8,7 @@ settings = {
             "COM_settings": {
                 "baudrate": [300, 600, 1200, 2400, 4800, 9600, ][::-1],
                 "bytesize": [7, 8, ][::-1],
-                "stop_bits": [0, 1, 2, ][::-1],
+                "stop_bits": [2, ][::-1],
                 "parity": ["None", "Odd", "Even", ],
             },
 

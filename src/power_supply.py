@@ -11,11 +11,26 @@ class PowerSupply:
     Class for work with device COM-port
     """
 
-    # COM port parity parameters
+    # COM port parameters
     parity_params = {
         "None": serial.PARITY_NONE,
         "Even": serial.PARITY_EVEN,
         "Odd": serial.PARITY_ODD,
+        "Mark": serial.PARITY_MARK,
+        "Space": serial.PARITY_SPACE,
+    }
+
+    bytesize = {
+        5: serial.FIVEBITS,
+        6: serial.SIXBITS,
+        7: serial.SEVENBITS,
+        8: serial.EIGHTBITS,
+    }
+
+    stopbits = {
+        1: serial.STOPBITS_ONE,
+        1.5: serial.STOPBITS_ONE_POINT_FIVE,
+        2: serial.STOPBITS_TWO,
     }
 
     # List of commands
@@ -25,8 +40,13 @@ class PowerSupply:
     coding = "ascii"
 
     def __init__(self, port: str, baudrate: int, bytesize: int, stop_bits: int, parity: str):
-        self.port = serial.Serial(port=port, baudrate=baudrate, bytesize=bytesize, stopbits=stop_bits,
-                                  parity=self.__class__.parity_params.get(parity, serial.PARITY_NONE))
+        self.port = serial.Serial(
+            port=port,
+            baudrate=baudrate,
+            bytesize=self.__class__.bytesize.get(bytesize),
+            stopbits=self.__class__.stopbits.get(stop_bits),
+            parity=self.__class__.parity_params.get(parity),
+        )
 
     def connect(self):
         if not self.port.isOpen():
@@ -115,7 +135,7 @@ if __name__ == "__main__":
     print(PowerSupply.get_com_ports())
 
     agilent = PowerSupply(
-        port="COM3",
+        port="COM11",
         baudrate=9600,
         bytesize=8,
         stop_bits=2,
@@ -141,11 +161,12 @@ if __name__ == "__main__":
     sleep(1)
     agilent.send_message("VOLTage:RANGe HIGH")
     sleep(0.1)
-    # agilent.send_message("DISPlay?")
+    agilent.send_message("DISPlay on")
     agilent.send_message("DISPlay:TEXT:CLEar")
     agilent.send_message("DISPlay:TEXT?")
-    # agilent.send_message(f'DISP:TEXT "Hello world"')
+    agilent.send_message(f'DISP:STATe?')
     print(agilent.get_raw_message())
+    agilent.send_message("DISPlay off")
 
 
 
