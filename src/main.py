@@ -64,6 +64,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.oyt_volt_set_btn.clicked.connect(self.oyt_volt_set_btn_clicked)
         self.out_cur_get.clicked.connect(self.out_cur_get_clicked)
         self.pb_clear_hist.clicked.connect(self.clear_history)
+        self.dev_beep_btn.clicked.connect(self.say_beep)
+        self.dev_version_btn.clicked.connect(self.get_dev_version)
+        self.dev_error_btn.clicked.connect(self.get_dev_errors)
+        self.dev_hello_btn.clicked.connect(self.say_hello)
+        self.dev_disp_clear_btn.clicked.connect(self.dev_clear_display)
         # combo boxex
         self.device_combo_box.currentTextChanged.connect(self.select_device_clicked)
         self.com_combo_box_portname.currentTextChanged.connect(self.select_com_port_clicked)
@@ -73,6 +78,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.volt_range_high_btn.clicked.connect(self.set_voltage_range)
         # check boxes
         # self.auto_check_ch_box.stateChanged.connect(self.auto_check_ch_box_clicked)
+        self.dev_cntrl_ch.stateChanged.connect(self.dev_control_type_changed)
 
     def disp_info(self, msg_type: str, message: str):
         """Send some info into message field"""
@@ -230,6 +236,62 @@ class MainWindow(QtWidgets.QMainWindow):
         except:
             self.disp_info("ERROR", "Can't close serial port!")
             self.com_lbl_portname_2.setStyleSheet("color: red")
+
+    def say_beep(self):
+        try:
+            self.com.beep()
+            self.disp_info("INFO", "Beeeeeeeeeeeep!")
+        except:
+            self.disp_info("ERROR", "Can't write command to device")
+
+    def say_hello(self):
+        try:
+            self.com.set_remote_control()
+            self.com.set_display("on")
+            # self.com.clear_display()
+            self.com.display_text("HELLO WORLD")
+            sleep(1)
+            self.com.clear_display()
+
+            if self.dev_cntrl_ch.isChecked():
+                self.com.set_local_control()
+
+        except:
+            self.disp_info("ERROR", "Can't display some text")
+
+    def get_dev_version(self):
+        try:
+            ver = self.com.get_dev_version()
+            self.disp_info("INFO", f"Device version: {ver}")
+        except:
+            self.disp_info("ERROR", "Can't get device version!")
+
+    def get_dev_errors(self):
+        try:
+            err = self.com.get_dev_errors()
+            self.disp_info("INFO", f"{err}")
+        except:
+            self.disp_info("ERROR", "Can't read device errors!")
+
+    def dev_clear_display(self):
+        try:
+            self.com.clear_display()
+        except:
+            self.disp_info("ERROR", "Can't clear device display!")
+
+    def dev_control_type_changed(self):
+        if self.dev_cntrl_ch.isChecked():
+            try:
+                self.com.set_local_control()
+                self.disp_info("INFO", f"Device place in local mode control!")
+            except:
+                self.disp_info("ERROR", f"Can't place device into a local mode control!")
+        else:
+            try:
+                self.com.set_remote_control()
+                self.disp_info("INFO", f"Device place in remote mode control!")
+            except:
+                self.disp_info("ERROR", f"Can't place device into a remote mode control!")
 
     def get_voltage_settings(self, range: str, param: str):
         return settings.get("devices").get(self.device_combo_box.currentText()).get("Voltage ranges").get(range).get(param)

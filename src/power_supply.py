@@ -80,42 +80,68 @@ class PowerSupply:
 
     def device_reset(self):
         self.send_message(self.__class__.commands.get("reset"))
-        sleep(0.1)
+        # sleep(0.1)
 
     def set_current(self, current: float):
         self.send_message(self.__class__.commands.get("set_current").format(round(current, 3)))
-        sleep(0.1)
+        # sleep(0.1)
 
     def get_current(self) -> str:
         self.send_message(self.__class__.commands.get("get_current"))
-        sleep(0.1)
+        # sleep(0.1)
         return self.get_message()
 
     def set_voltage(self, voltage: float):
         self.send_message(self.__class__.commands.get("set_voltage").format(round(voltage, 3)))
-        sleep(0.1)
+        # sleep(0.1)
 
     def get_voltage(self) -> str:
         self.send_message(self.__class__.commands.get("get_voltage"))
-        sleep(0.1)
+        # sleep(0.1)
         return self.get_message()
 
     def set_output(self, out: str):
         self.send_message(self.__class__.commands.get("set_output").format(out.lower()))
-        sleep(0.05)
+        # sleep(0.05)
 
     def get_voltage_range(self):
         self.send_message(self.__class__.commands.get("get_voltage_range"))
-        sleep(0.1)
+        # sleep(0.1)
         return self.get_message()
 
     def set_voltage_low(self):
         self.send_message(self.__class__.commands.get("set_voltage_low"))
-        sleep(0.1)
+        # sleep(0.1)
 
     def set_voltage_high(self):
         self.send_message(self.__class__.commands.get("set_voltage_high"))
-        sleep(0.1)
+        # sleep(0.1)
+
+    def beep(self):
+        self.send_message(self.__class__.commands.get("beep"))
+
+    def get_dev_version(self) -> str:
+        self.send_message(self.__class__.commands.get("version"))
+        return self.get_message()
+
+    def get_dev_errors(self) -> str:
+        self.send_message(self.__class__.commands.get("get_errors"))
+        return self.get_message()
+
+    def set_local_control(self):
+        self.send_message(self.__class__.commands.get("set_local_control"))
+
+    def set_remote_control(self):
+        self.send_message(self.__class__.commands.get("set_remote_control"))
+
+    def set_display(self, out: str):
+        self.send_message(self.__class__.commands.get("set_display").format(out.lower()))
+
+    def clear_display(self):
+        self.send_message(self.__class__.commands.get("clear_display"))
+
+    def display_text(self, text: str):
+        self.send_message(self.__class__.commands.get("display_text").format(text))
 
     @staticmethod
     def get_com_ports() -> dict:
@@ -135,7 +161,7 @@ if __name__ == "__main__":
     print(PowerSupply.get_com_ports())
 
     agilent = PowerSupply(
-        port="COM11",
+        port="COM14",
         baudrate=9600,
         bytesize=8,
         stop_bits=2,
@@ -164,6 +190,9 @@ if __name__ == "__main__":
     agilent.send_message("DISPlay on")
     agilent.send_message("DISPlay:TEXT:CLEar")
     agilent.send_message("DISPlay:TEXT?")
+    agilent.send_message("DISPlay:TEXT lol")
+    agilent.send_message("DISPlay:TEXT lol")
+    agilent.send_message("DISPlay:TEXT 'lol'")
     agilent.send_message(f'DISP:STATe?')
     print(agilent.get_raw_message())
     agilent.send_message("DISPlay off")

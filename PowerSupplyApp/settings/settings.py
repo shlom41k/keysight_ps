@@ -43,6 +43,14 @@ commands = {
     "get_voltage_range": "VOLTage:RANGe?",
     "set_voltage_high": "VOLTage:RANGe HIGH",
     "set_voltage_low": "VOLTage:RANGe LOW",
+    "beep": "SYSTem:BEEPer",
+    "version": "SYSTem:VERSion?",
+    "get_errors": "SYSTem:ERRor?",
+    "set_local_control": "SYSTem:LOCal",
+    "set_remote_control": "SYSTem:REMote",
+    "set_display": "DISPlay {}",
+    "clear_display": "DISPlay:TEXT:CLEar",
+    "display_text": "DISPlay:TEXT '{}'",
 }
 
 
