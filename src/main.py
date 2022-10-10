@@ -14,8 +14,11 @@ class MainWindow(QtWidgets.QMainWindow):
     com: PowerSupply
     auto_cur_update_thread: Thread
     params = ["voltage_min", "voltage_max", "current_min", "current_max", ]
+    range_low = ["LOW", "P8V", "P35V"]
+    range_high = ["HIGH", "P20V", "P60V"]
     cur_mult = {"A": 1, "mA": 1e3, "uA": 1e6, }
     cur_update_time = 0.01
+    storage_len = 5
 
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
@@ -24,6 +27,15 @@ class MainWindow(QtWidgets.QMainWindow):
         # set window name
         self.setWindowTitle("Power Supply Control")
 
+        # Storage states radio buttons
+        self.store_btn = {
+            1: {"store": self.store_btn_1, "voltage": 0.0, "current": 0.0, "range": "", },
+            2: {"store": self.store_btn_2, "voltage": 0.0, "current": 0.0, "range": "", },
+            3: {"store": self.store_btn_3, "voltage": 0.0, "current": 0.0, "range": "", },
+            4: {"store": self.store_btn_4, "voltage": 0.0, "current": 0.0, "range": "", },
+            5: {"store": self.store_btn_5, "voltage": 0.0, "current": 0.0, "range": "", },
+        }
+
         # Disabled controls panels
         self.com_group_box.setDisabled(True)
         self.device_ctrl_group_box.setDisabled(True)
@@ -31,6 +43,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.auto_check_ch_box.setDisabled(True)
         self.pb_clear_hist.setEnabled(True)
         self.en_dis_output_control(False)
+
+        self.connect_prog_bar.setMinimum(0)
+        self.connect_prog_bar.setMaximum(100)
 
         # Set voltage range
         self.volt_range_low_btn.setChecked(True)
@@ -69,6 +84,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dev_error_btn.clicked.connect(self.get_dev_errors)
         self.dev_hello_btn.clicked.connect(self.say_hello)
         self.dev_disp_clear_btn.clicked.connect(self.dev_clear_display)
+        self.state_load_btn.clicked.connect(self.state_load_btn_clicked)
+        self.state_save_btn.clicked.connect(self.state_save_btn_clicked)
         # combo boxex
         self.device_combo_box.currentTextChanged.connect(self.select_device_clicked)
         self.com_combo_box_portname.currentTextChanged.connect(self.select_com_port_clicked)
@@ -203,30 +220,65 @@ class MainWindow(QtWidgets.QMainWindow):
             self.disp_info("ERROR", "No answer from device :(")
             return
 
-        self.com_lbl_portname_2.setStyleSheet("color: green")
-
-        self.device_combo_box.setDisabled(True)
-        self.com_pb_connect.setDisabled(True)
-        self.disable_com_settings()
-
-        self.device_ctrl_group_box.setEnabled(True)
-
         # reset device
         try:
             self.com.device_reset()
         except:
             self.disp_info("ERROR", "Something goes ne tak :(. Can't reset device. Reconnect.")
+            return
+
+        # Enable remote control
+        try:
+            self.com.set_remote_control()
+            self.com.set_display("ON")
+        except:
+            self.disp_info("ERROR", "Can't set remote control!")
+
+        # read device storage states
+        try:
+            self.load_storage()
+        except:
+            self.disp_info("ERROR", "Can't load storage states! Try again")
+            return
 
         # set voltage range (HIGH or LOW)
-        self.set_voltage_range()
+        try:
+            self.set_voltage_range()
+        except:
+            self.disp_info("ERROR", "Can't set limits values! Reconnect!")
+            return
 
         # get current limits (voltage & current)
-        self.get_current_limits()
+        try:
+            self.get_current_limits()
+        except:
+            self.disp_info("ERROR", "Can't read limits values! Reconnect!")
+            return
+
+        # Display 'DONE' message
+        try:
+            self.com.display_text("CONNECTED")
+            sleep(0.5)
+            self.com.clear_display()
+
+            if self.dev_cntrl_ch.isChecked():
+                self.com.set_local_control()
+        except:
+            pass
+
+        # GUI
+        self.connect_prog_bar.setValue(self.connect_prog_bar.maximum())
+        self.com_lbl_portname_2.setStyleSheet("color: green")
+        self.device_combo_box.setDisabled(True)
+        self.com_pb_connect.setDisabled(True)
+        self.disable_com_settings()
+        self.device_ctrl_group_box.setEnabled(True)
 
     def com_pb_disconnect_clicked(self):
         try:
             self.com.disconnect()
             self.disp_info("INFO", "COM port closed")
+            self.connect_prog_bar.setValue(self.connect_prog_bar.minimum())
             self.com_lbl_portname_2.setStyleSheet("color: blue")
             self.com_pb_connect.setEnabled(True)
             self.device_combo_box.setEnabled(True)
@@ -236,6 +288,108 @@ class MainWindow(QtWidgets.QMainWindow):
         except:
             self.disp_info("ERROR", "Can't close serial port!")
             self.com_lbl_portname_2.setStyleSheet("color: red")
+
+    def load_storage(self):
+        try:
+            msg = f"WAIT "
+            # self.com.set_remote_control()
+            # self.com.set_display("ON")
+            # self.com.display_text(msg)
+
+            for state in range(1, self.__class__.storage_len + 1):
+                msg += "."
+                try:
+                    self.com.display_text(msg)
+                except:
+                    pass
+                self.com.load_state(state)
+
+                voltage, current = float(self.com.get_voltage_limit()), float(self.com.get_current_limit())
+                self.store_btn.get(state)["voltage"] = voltage
+                self.store_btn.get(state)["current"] = current
+
+                volt_range = self.com.get_voltage_range()
+                self.store_btn.get(state)["range"] = volt_range
+
+                self.store_btn.get(state).get("store").setText(
+                    f"Storage state {state}: Voltage: {round(voltage, 3)} V, current: {round(current, 3)} A"
+                )
+                self.disp_info("INFO", f"Device storage state {state}: {round(voltage, 3)} V, {round(current, 3)} A, range: {volt_range}")
+
+                self.connect_prog_bar.setValue(self.connect_prog_bar.value() + int(round(self.connect_prog_bar.maximum() / self.__class__.storage_len + 1)))
+
+        except:
+            self.disp_info("ERROR", "Can't read device storage states!")
+
+    def state_load_btn_clicked(self):
+        for state in range(1, self.__class__.storage_len + 1):
+            # get selected state
+            if self.store_btn.get(state).get("store").isChecked():
+
+                # set voltage range from store
+                volt_range = self.store_btn.get(state).get("range")
+
+                if volt_range in self.__class__.range_low:
+                    self.volt_range_low_btn.setChecked(True)
+                    self.volt_range_high_btn.setChecked(False)
+                elif volt_range in self.__class__.range_high:
+                    self.volt_range_high_btn.setChecked(True)
+                    self.volt_range_low_btn.setChecked(False)
+                else:
+                    self.disp_info("ERROR", f"Unknown voltage range value '{volt_range}'")
+                    return
+
+                try:
+                    self.set_voltage_range()
+                except:
+                    self.disp_info("ERROR", "Can't set voltage range!")
+                    return
+
+                volt = self.store_btn.get(state).get("voltage")
+                cur = self.store_btn.get(state).get("current")
+
+                try:
+                    self.set_default_limits(volt=volt, cur=cur)
+                except:
+                    self.disp_info("ERROR", "Can't set limits from this state!")
+
+                self.disp_info("INFO", f"Load state {state}")
+                break
+
+    def state_save_btn_clicked(self):
+        for state in range(1, self.__class__.storage_len + 1):
+            # get selected state
+
+            if self.store_btn.get(state).get("store").isChecked():
+
+                # save voltage range
+                if self.volt_range_low_btn.isChecked():
+                    self.store_btn.get(state)["range"] = "LOW"
+                elif self.volt_range_high_btn.isChecked():
+                    self.store_btn.get(state)["range"] = "HIGH"
+                else:
+                    pass
+
+                # save voltage and current values
+                voltage, current = float(self.com.get_voltage_limit()), float(self.com.get_current_limit())
+
+                self.store_btn.get(state)["voltage"] = float(voltage)
+                self.store_btn.get(state)["current"] = float(current)
+
+                # update selected state label
+                self.store_btn.get(state).get("store").setText(
+                    f"Storage state {state}: Voltage: {round(voltage, 3)} V, current: {round(current, 3)} A"
+                )
+
+                # save current parameters into device memory
+                try:
+                    self.com.save_state(state)
+                    self.disp_info("INFO", f"Current device parameters saved into state {state}")
+                except:
+                    self.disp_info("ERROR", "Can't save state into device memory")
+                    return
+
+                break
 
     def say_beep(self):
         try:
@@ -433,6 +587,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.out_volt_onoff_btn.setStyleSheet(f"background-color: rgb(74, 255, 80)")
             self.volt_range_group_box.setDisabled(True)
             self.com_pb_disconnect.setDisabled(True)
+            self.store_group_box.setDisabled(True)
 
             self.en_dis_output_control(True)
 
@@ -449,6 +604,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.out_volt_onoff_btn.setStyleSheet(f"background-color: rgb(255, 119, 119)")
             self.volt_range_group_box.setEnabled(True)
             self.com_pb_disconnect.setEnabled(True)
+            self.store_group_box.setEnabled(True)
 
             self.en_dis_output_control(False)
 

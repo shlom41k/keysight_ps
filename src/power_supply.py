@@ -91,6 +91,11 @@ class PowerSupply:
         # sleep(0.1)
         return self.get_message()
 
+    def get_current_limit(self) -> str:
+        self.send_message(self.__class__.commands.get("get_current_limit"))
+        # sleep(0.2)
+        return self.get_message()
+
     def set_voltage(self, voltage: float):
         self.send_message(self.__class__.commands.get("set_voltage").format(round(voltage, 3)))
         # sleep(0.1)
@@ -100,6 +105,11 @@ class PowerSupply:
         # sleep(0.1)
         return self.get_message()
 
+    def get_voltage_limit(self) -> str:
+        self.send_message(self.__class__.commands.get("get_voltage_limit"))
+        # sleep(0.2)
+        return self.get_message()
+
     def set_output(self, out: str):
         self.send_message(self.__class__.commands.get("set_output").format(out.lower()))
         # sleep(0.05)
@@ -107,7 +117,7 @@ class PowerSupply:
     def get_voltage_range(self):
         self.send_message(self.__class__.commands.get("get_voltage_range"))
         # sleep(0.1)
-        return self.get_message()
+        return self.get_message().rstrip()
 
     def set_voltage_low(self):
         self.send_message(self.__class__.commands.get("set_voltage_low"))
@@ -142,6 +152,12 @@ class PowerSupply:
 
     def display_text(self, text: str):
         self.send_message(self.__class__.commands.get("display_text").format(text))
+
+    def save_state(self, state: int):
+        self.send_message(self.__class__.commands.get("save_state").format(f"{state}"))
+
+    def load_state(self, state: int):
+        self.send_message(self.__class__.commands.get("load_state").format(f"{state}"))
 
     @staticmethod
     def get_com_ports() -> dict:
@@ -185,20 +201,26 @@ if __name__ == "__main__":
     sleep(0.1)
     print(agilent.get_message())
     sleep(1)
-    agilent.send_message("VOLTage:RANGe HIGH")
+    agilent.send_message("VOLTage:RANGe LOW")
     sleep(0.1)
-    agilent.send_message("DISPlay on")
-    agilent.send_message("DISPlay:TEXT:CLEar")
-    agilent.send_message("DISPlay:TEXT?")
-    agilent.send_message("DISPlay:TEXT lol")
-    agilent.send_message("DISPlay:TEXT lol")
-    agilent.send_message("DISPlay:TEXT 'lol'")
-    agilent.send_message(f'DISP:STATe?')
-    print(agilent.get_raw_message())
-    agilent.send_message("DISPlay off")
+    # agilent.send_message("DISPlay on")
+    # agilent.send_message("DISPlay:TEXT:CLEar")
+    # agilent.send_message("DISPlay:TEXT?")
+    # agilent.send_message("DISPlay:TEXT lol")
+    # agilent.send_message("DISPlay:TEXT lol")
+    # agilent.send_message("DISPlay:TEXT 'lol'")
 
+    agilent.send_message("*SAV 2")
+    sleep(0.1)
+    agilent.send_message("*RCL 1")
 
+    print((agilent.send_message("CURRent?")))
+    sleep(0.1)
+    print(float(agilent.get_message()))
 
+    print((agilent.send_message("VOLTage?")))
+    sleep(0.1)
+    print(float(agilent.get_message()))
 
     agilent.disconnect()
 

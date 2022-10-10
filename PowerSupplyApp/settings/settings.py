@@ -37,8 +37,10 @@ commands = {
     "reset": "*RST",
     "set_current": "Current {}",
     "get_current": "Measure:Current?",
+    "get_current_limit": "CURRent?",
     "set_voltage": "Volt {}",
     "get_voltage": "Measure:Volt?",
+    "get_voltage_limit": "Volt?",
     "set_output": "Output {}",
     "get_voltage_range": "VOLTage:RANGe?",
     "set_voltage_high": "VOLTage:RANGe HIGH",
@@ -51,6 +53,8 @@ commands = {
     "set_display": "DISPlay {}",
     "clear_display": "DISPlay:TEXT:CLEar",
     "display_text": "DISPlay:TEXT '{}'",
+    "save_state": "*SAV {}",
+    "load_state": "*RCL {}",
 }
 
 
