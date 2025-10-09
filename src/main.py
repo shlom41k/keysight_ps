@@ -14,11 +14,12 @@ class MainWindow(QtWidgets.QMainWindow):
     com: PowerSupply
     auto_cur_update_thread: Thread
     params = ["voltage_min", "voltage_max", "current_min", "current_max", ]
-    range_low = ["LOW", "P8V", "P35V"]
-    range_high = ["HIGH", "P20V", "P60V"]
+    range_low = ["LOW", "P8V", "P15V", "P25V", "P35V", ]
+    range_high = ["HIGH", "P20V", "P30V", "P50V", "P60V", ]
     cur_mult = {"A": 1, "mA": 1e3, "uA": 1e6, }
     cur_update_time = 0.01
     storage_len = 5
+    storage_len_max = 5
 
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
@@ -121,8 +122,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.device_combo_box.addItems(self.devices)
 
     def select_device_clicked(self):
+
+        # Set device info
         device = settings.get("devices").get(self.device_combo_box.currentText())
         self.device_lbl_description.setText(device.get("description"))
+
+        # Set storage depth
+        #print(device.get("storage_depth"))
+        self.__class__.storage_len = device.get("storage_depth")
+
+        # Set LOW and HIGH ranges parameters
+        volt_min, volt_max, cur_min, cur_max = [self.get_voltage_settings("Low", param) for param in self.__class__.params]
+        self.volt_range_low_btn.setText(f"Low: {volt_min} - {volt_max} V, {cur_min} - {cur_max} A.")
+        volt_min, volt_max, cur_min, cur_max = [self.get_voltage_settings("High", param) for param in self.__class__.params]
+        self.volt_range_high_btn.setText(f"High: {volt_min} - {volt_max} V, {cur_min} - {cur_max} A.")
 
         self.clear_com_settings()
         self.set_com_settings()
@@ -216,7 +229,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         except:
             self.com.disconnect()
-            print("Here")
+            #print("Here")
             self.disp_info("ERROR", "No answer from device :(")
             return
 
@@ -296,27 +309,35 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.com.set_display("ON")
             # self.com.display_text(msg)
 
-            for state in range(1, self.__class__.storage_len + 1):
+            for state in range(1, self.__class__.storage_len_max + 1):
                 msg += "."
                 try:
                     self.com.display_text(msg)
                 except:
                     pass
-                self.com.load_state(state)
 
-                voltage, current = float(self.com.get_voltage_limit()), float(self.com.get_current_limit())
-                self.store_btn.get(state)["voltage"] = voltage
-                self.store_btn.get(state)["current"] = current
+                if state <= self.__class__.storage_len:
+                    self.com.load_state(state)
 
-                volt_range = self.com.get_voltage_range()
-                self.store_btn.get(state)["range"] = volt_range
+                    voltage, current = float(self.com.get_voltage_limit()), float(self.com.get_current_limit())
+                    self.store_btn.get(state)["voltage"] = voltage
+                    self.store_btn.get(state)["current"] = current
 
-                self.store_btn.get(state).get("store").setText(
-                    f"Storage state {state}: Voltage: {round(voltage, 3)} V, current: {round(current, 3)} A"
-                )
-                self.disp_info("INFO", f"Device storage state {state}: {round(voltage, 3)} V, {round(current, 3)} A, range: {volt_range}")
+                    volt_range = self.com.get_voltage_range()
+                    self.store_btn.get(state)["range"] = volt_range
 
-                self.connect_prog_bar.setValue(self.connect_prog_bar.value() + int(round(self.connect_prog_bar.maximum() / self.__class__.storage_len + 1)))
+                    self.store_btn.get(state).get("store").setText(
+                        f"Storage state {state}: Voltage: {round(voltage, 3)} V, current: {round(current, 3)} A"
+                    )
+                    self.store_btn.get(state).get("store").setEnabled(True)
+                    self.disp_info("INFO", f"Device storage state {state}: {round(voltage, 3)} V, {round(current, 3)} A, range: {volt_range}")
+                else:
+                    self.store_btn.get(state).get("store").setText(f"Storage state {state} does not available")
+                    self.store_btn.get(state).get("store").setDisabled(True)
+                    self.disp_info("INFO", f"Device storage state {state} does not available")
+
+                self.connect_prog_bar.setValue(self.connect_prog_bar.value() + int(
+                    round(self.connect_prog_bar.maximum() / self.__class__.storage_len_max + 1)))
 
         except:
             self.disp_info("ERROR", "Can't read device storage states!")
@@ -671,8 +692,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.auto_check_ch_box_clicked()
         except:
             print("Already exist")
-
-
 
 
 if __name__ == "__main__":

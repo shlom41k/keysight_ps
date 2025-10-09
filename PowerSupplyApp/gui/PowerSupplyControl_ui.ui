@@ -474,7 +474,7 @@
          </font>
         </property>
         <property name="text">
-         <string>High (0...60 V, 1.3 A)</string>
+         <string>High</string>
         </property>
        </widget>
        <widget class="QRadioButton" name="volt_range_low_btn">
@@ -493,7 +493,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Low (0...35 V, 2.2 A)</string>
+         <string>Low</string>
         </property>
         <property name="checked">
          <bool>true</bool>
@@ -1195,6 +1195,22 @@
       </property>
       <property name="text">
        <string>Clear</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="auth_lbl">
+      <property name="geometry">
+       <rect>
+        <x>610</x>
+        <y>0</y>
+        <width>131</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600; color:#aa0000;&quot;&gt;dev. by @shlom41k&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
       </property>
      </widget>
     </widget>

@@ -1,7 +1,7 @@
 import serial
 import serial.tools.list_ports
 
-from time import sleep
+from time import sleep, time
 
 from settings.settings import commands as cmd
 
@@ -60,9 +60,10 @@ class PowerSupply:
         if self.port.isOpen():
             self.port.close()
 
-    def send_message(self, message: str):
+    def send_message(self, message: str, send_delay=True):
         self.port.write(bytes(f"{message}\n", self.__class__.coding))
-        sleep(0.1)
+        if send_delay:
+            sleep(0.1)
 
     def get_message(self) -> str:
         return self.port.read_all().decode(encoding=self.__class__.coding).rstrip("\n")
@@ -110,9 +111,11 @@ class PowerSupply:
         # sleep(0.2)
         return self.get_message()
 
-    def set_output(self, out: str):
-        self.send_message(self.__class__.commands.get("set_output").format(out.lower()))
-        # sleep(0.05)
+    def set_output(self, out: str, set_delay=True):
+        d = True if set_delay else False
+        self.send_message(self.__class__.commands.get("set_output").format(out.lower()), send_delay=d)
+        if d:
+            sleep(0.05)
 
     def get_voltage_range(self):
         self.send_message(self.__class__.commands.get("get_voltage_range"))
@@ -176,53 +179,61 @@ if __name__ == "__main__":
 
     print(PowerSupply.get_com_ports())
 
-    agilent = PowerSupply(
-        port="COM14",
+    # Create devices
+    agilent_12V = PowerSupply(
+        port="COM8",
         baudrate=9600,
         bytesize=8,
         stop_bits=2,
         parity="None",
     )
 
-    agilent.connect()
-    print(agilent.get_info())
-    agilent.device_reset()
+    """
+    agilent_5V = PowerSupply(
+        port="COM8",
+        baudrate=9600,
+        bytesize=8,
+        stop_bits=2,
+        parity="None",
+    )
+    """
+    agilent_12V.connect()
+    agilent_12V.device_reset()
+    agilent_12V.set_current(0.2)
+    agilent_12V.send_message("VOLTage:RANGe HIGN")
+    agilent_12V.set_voltage(60)
 
-    agilent.set_current(0.1)
-    agilent.set_voltage(12)
-    sleep(1)
-    agilent.set_output("on")
+    """
+    agilent_5V.connect()
+    agilent_5V.device_reset()
+    agilent_5V.send_message("VOLTage:RANGe LOW")
+    agilent_5V.set_current(1.5)
+    agilent_5V.set_voltage(5)
+    """
+
+
+    #start_time = time()
+    agilent_12V.set_output("on", set_delay=False)
+    sleep(0.5)
+    agilent_12V.set_voltage(27)
     sleep(2)
-    print(float(agilent.get_current()))
-    print(float(agilent.get_voltage()))
-    agilent.set_output("off")
-    sleep(1)
-    agilent.send_message("VOLTage:RANGe?")
-    sleep(0.1)
-    print(agilent.get_message())
-    sleep(1)
-    agilent.send_message("VOLTage:RANGe LOW")
-    sleep(0.1)
-    # agilent.send_message("DISPlay on")
-    # agilent.send_message("DISPlay:TEXT:CLEar")
-    # agilent.send_message("DISPlay:TEXT?")
-    # agilent.send_message("DISPlay:TEXT lol")
-    # agilent.send_message("DISPlay:TEXT lol")
-    # agilent.send_message("DISPlay:TEXT 'lol'")
+    agilent_12V.set_output("off")
+    #end_time = time() - start_time
+    # agilent_5V.set_output("on", set_delay=False)
+    #print(end_time)
 
-    agilent.send_message("*SAV 2")
-    sleep(0.1)
-    agilent.send_message("*RCL 1")
+    while True:
+        e = input("Press '0' for DISABLE output: ")
+        if e == "0":
+            break
 
-    print((agilent.send_message("CURRent?")))
-    sleep(0.1)
-    print(float(agilent.get_message()))
+    #agilent_12V.set_output("off")
+    #agilent_5V.set_output("off")
 
-    print((agilent.send_message("VOLTage?")))
-    sleep(0.1)
-    print(float(agilent.get_message()))
+    print("Output OFF")
 
-    agilent.disconnect()
+    agilent_12V.disconnect()
+    #agilent_5V.disconnect()
 
 
 
