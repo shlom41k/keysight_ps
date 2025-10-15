@@ -20,6 +20,7 @@ class MainWindow(QtWidgets.QMainWindow):
     cur_update_time = 0.01
     storage_len = 5
     storage_len_max = 5
+    dev_name_info_ind = 1
 
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
@@ -222,6 +223,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
             if dev_id:
                 self.disp_info("INFO", dev_id)
+                cur_dev = dev_id.split(",")[self.__class__.dev_name_info_ind]
+                print(cur_dev)
+
+                if cur_dev not in self.device_combo_box.currentText():
+                    self.disp_info("ERROR", f"It's not a {self.device_combo_box.currentText()}. Choose {cur_dev} device!")
+                    self.com.disconnect()
+                    return
+
             else:
                 self.disp_info("ERROR", "No answer from device. Is it correct COM port?")
                 self.com.disconnect()

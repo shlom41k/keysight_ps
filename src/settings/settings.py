@@ -309,7 +309,7 @@ commands = {
     "ID": "*IDN?",
     "reset": "*RST",
     "set_current": "Current {}",
-    "get_current": "Measure:Current?",
+    "get_current": "Measure:CURRent?",
     "get_current_limit": "CURRent?",
     "set_voltage": "Volt {}",
     "get_voltage": "Measure:Volt?",
